@@ -9,10 +9,27 @@ body {
     color: white;
 }
 
+/* 草书 - Ma Shan Zheng */
 .font-brush {
     font-family: "Ma Shan Zheng", cursive;
 }
 
+/* 狂草 - Liu Jian Mao Cao */
+.font-cao {
+    font-family: "Liu Jian Mao Cao", cursive;
+}
+
+/* 行书 - Zhi Mang Xing */
+.font-xing {
+    font-family: "Zhi Mang Xing", cursive;
+}
+
+/* 行楷 - Long Cang */
+.font-kai {
+    font-family: "Long Cang", cursive;
+}
+
+/* 备用衬线字体 */
 .font-serif-sc {
-    font-family: "Noto Serif SC", serif;
+    font-family: "Long Cang", "Ma Shan Zheng", cursive;
 }

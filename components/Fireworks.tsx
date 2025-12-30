@@ -1,25 +1,38 @@
+import React, { useEffect, useRef, useCallback } from "react";
+import { COLORS } from "../constants";
 
-import React, { useEffect, useRef, useCallback } from 'react';
-import { FireworkParticle } from '../types';
-import { COLORS } from '../constants';
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  alpha: number;
+  color: string;
+  decay: number;
+  size: number;
+  flicker?: boolean;
+  type?: string;
+}
 
 const Fireworks: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const particles = useRef<(FireworkParticle & { flicker?: boolean; type?: string })[]>([]);
+  const particles = useRef<Particle[]>([]);
+  const animationFrameId = useRef<number>(0);
 
   const createFirework = useCallback((x: number, y: number) => {
-    const types = ['burst', 'ring', 'glitter'];
+    const types = ["burst", "ring", "glitter"];
     const type = types[Math.floor(Math.random() * types.length)];
-    const particleCount = type === 'ring' ? 80 : 100 + Math.floor(Math.random() * 50);
+    const particleCount =
+      type === "ring" ? 60 : 80 + Math.floor(Math.random() * 30);
     const color = COLORS[Math.floor(Math.random() * COLORS.length)];
-    const isGlitter = type === 'glitter';
-    
+    const isGlitter = type === "glitter";
+
     for (let i = 0; i < particleCount; i++) {
       let vx = 0;
       let vy = 0;
       let speed = 0;
 
-      if (type === 'ring') {
+      if (type === "ring") {
         const angle = (i / particleCount) * Math.PI * 2;
         speed = 4 + Math.random() * 2;
         vx = Math.cos(angle) * speed;
@@ -38,10 +51,10 @@ const Fireworks: React.FC = () => {
         vy,
         alpha: 1,
         color,
-        decay: (isGlitter ? 0.005 : 0.01) + Math.random() * 0.02,
+        decay: (isGlitter ? 0.006 : 0.012) + Math.random() * 0.018,
         size: (isGlitter ? 0.5 : 1) + Math.random() * 2,
         flicker: isGlitter,
-        type
+        type,
       });
     }
   }, []);
@@ -49,10 +62,8 @@ const Fireworks: React.FC = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d', { alpha: false });
+    const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
-
-    let animationFrameId: number;
 
     const resize = () => {
       canvas.width = window.innerWidth;
@@ -60,15 +71,16 @@ const Fireworks: React.FC = () => {
     };
 
     const update = () => {
-      // Darker clear for better trails
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      // 半透明黑色覆盖，产生拖尾效果
+      ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // 更新和绘制粒子
       for (let i = particles.current.length - 1; i >= 0; i--) {
         const p = particles.current[i];
         p.x += p.vx;
         p.y += p.vy;
-        p.vy += p.type === 'glitter' ? 0.02 : 0.06; // gravity
+        p.vy += p.type === "glitter" ? 0.02 : 0.06; // gravity
         p.alpha -= p.decay;
 
         if (p.alpha <= 0) {
@@ -78,7 +90,7 @@ const Fireworks: React.FC = () => {
 
         // Glitter flickering effect
         if (p.flicker && Math.random() > 0.5) {
-          ctx.globalAlpha = 0.2;
+          ctx.globalAlpha = p.alpha * 0.3;
         } else {
           ctx.globalAlpha = p.alpha;
         }
@@ -87,42 +99,40 @@ const Fireworks: React.FC = () => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Dynamic glow based on type
-        if (p.type !== 'glitter' || Math.random() > 0.8) {
-           ctx.shadowBlur = p.type === 'ring' ? 15 : 8;
-           ctx.shadowColor = p.color;
+        if (p.type !== "glitter" || Math.random() > 0.8) {
+          ctx.shadowBlur = p.type === "ring" ? 12 : 6;
+          ctx.shadowColor = p.color;
         }
       }
+
       ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
 
-      // Spawn frequency and variety
-      if (Math.random() < 0.06) {
+      // 控制粒子数量，避免过多
+      if (particles.current.length < 800 && Math.random() < 0.05) {
         createFirework(
           Math.random() * canvas.width,
-          Math.random() * canvas.height * 0.6
+          Math.random() * canvas.height * 0.6,
         );
       }
 
-      animationFrameId = requestAnimationFrame(update);
+      animationFrameId.current = requestAnimationFrame(update);
     };
 
-    window.addEventListener('resize', resize);
+    window.addEventListener("resize", resize);
     resize();
     update();
 
     return () => {
-      window.removeEventListener('resize', resize);
-      cancelAnimationFrame(animationFrameId);
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(animationFrameId.current);
     };
   }, [createFirework]);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 z-0 pointer-events-none"
-    />
+    <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />
   );
 };
 
